@@ -1,0 +1,78 @@
+# Compiled files
+*.o
+*.so
+*.dylib
+*.dll
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Mobile App (Flutter)
+mobile-app/.dart_tool/
+mobile-app/.flutter-plugins
+mobile-app/.flutter-plugins-dependencies
+mobile-app/.packages
+mobile-app/.pub-cache/
+mobile-app/.pub/
+mobile-app/build/
+mobile-app/ios/Flutter/flutter_assets/
+mobile-app/ios/Flutter/flutter_export_environment.sh
+mobile-app/ios/Runner/GeneratedPluginRegistrant.*
+mobile-app/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+mobile-app/android/.gradle/
+mobile-app/android/captures/
+mobile-app/android/gradlew
+mobile-app/android/gradlew.bat
+mobile-app/android/local.properties
+mobile-app/android/app/debug/
+mobile-app/android/app/profile/
+mobile-app/android/app/release/
+
+# ESP32 Firmware
+esp32-firmware/.pio/
+esp32-firmware/.vscode/
+esp32-firmware/lib/
+esp32-firmware/test/
+
+# Backend
+backend/node_modules/
+backend/.env
+backend/firebase-adminsdk-*.json
+backend/serviceAccountKey.json
+
+# Hardware
+hardware/*.bak
+hardware/*.tmp
+
+# Documentation
+docs/_build/
+docs/.doctrees/
+
+# Tests
+tests/coverage/
+tests/reports/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+
+# Secrets and credentials
+*.key
+*.pem
+*.p12
+config/secrets.json
+.env.local
+.env.production

@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Règles pour les utilisateurs
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Sous-collections des utilisateurs
+      match /pets/{petId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      match /devices/{deviceId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Sous-collections des appareils
+        match /feeding_schedules/{scheduleId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+        
+        match /logs/{logId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+    }
+    
+    // Règles pour les logs d'accès globaux
+    match /access_logs/{logId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Règles pour les logs de distribution globaux
+    match /feeding_logs/{logId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Règles pour les commandes d'appareils
+    match /device_commands/{commandId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Règles pour les statistiques globales (lecture seule pour les utilisateurs authentifiés)
+    match /statistics/{statId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Seules les Cloud Functions peuvent écrire
+    }
+    
+    // Règles pour les notifications
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && 
+                     (resource.data.userId == request.auth.uid || 
+                      resource.data.isGlobal == true);
+      allow write: if false; // Seules les Cloud Functions peuvent écrire
+    }
+    
+    // Règles pour la configuration système
+    match /system_config/{configId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Seuls les administrateurs peuvent modifier
+    }
+    
+    // Fonction utilitaire pour valider les données d'animal
+    function isValidPet(pet) {
+      return pet.keys().hasAll(['name', 'species', 'createdAt', 'updatedAt']) &&
+             pet.name is string &&
+             pet.species is string &&
+             pet.createdAt is timestamp &&
+             pet.updatedAt is timestamp;
+    }
+    
+    // Fonction utilitaire pour valider les données d'appareil
+    function isValidDevice(device) {
+      return device.keys().hasAll(['name', 'type', 'macAddress', 'createdAt', 'updatedAt']) &&
+             device.name is string &&
+             device.type in ['feeder', 'door', 'combo'] &&
+             device.macAddress is string &&
+             device.createdAt is timestamp &&
+             device.updatedAt is timestamp;
+    }
+    
+    // Fonction utilitaire pour valider les horaires de repas
+    function isValidFeedingSchedule(schedule) {
+      return schedule.keys().hasAll(['deviceId', 'petId', 'name', 'feedingTimes', 'createdAt', 'updatedAt']) &&
+             schedule.deviceId is string &&
+             schedule.petId is string &&
+             schedule.name is string &&
+             schedule.feedingTimes is list &&
+             schedule.createdAt is timestamp &&
+             schedule.updatedAt is timestamp;
+    }
+    
+    // Règles spécifiques avec validation
+    match /users/{userId}/pets/{petId} {
+      allow create: if request.auth != null && 
+                       request.auth.uid == userId &&
+                       isValidPet(request.resource.data);
+      allow update: if request.auth != null && 
+                       request.auth.uid == userId &&
+                       isValidPet(request.resource.data);
+    }
+    
+    match /users/{userId}/devices/{deviceId} {
+      allow create: if request.auth != null && 
+                       request.auth.uid == userId &&
+                       isValidDevice(request.resource.data);
+      allow update: if request.auth != null && 
+                       request.auth.uid == userId &&
+                       isValidDevice(request.resource.data);
+    }
+    
+    match /users/{userId}/devices/{deviceId}/feeding_schedules/{scheduleId} {
+      allow create: if request.auth != null && 
+                       request.auth.uid == userId &&
+                       isValidFeedingSchedule(request.resource.data);
+      allow update: if request.auth != null && 
+                       request.auth.uid == userId &&
+                       isValidFeedingSchedule(request.resource.data);
+    }
+  }
+}
