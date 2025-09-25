@@ -1,0 +1,73 @@
+je veux créer ce projet selon cet cahier des charges
+
+Cahier des Charges
+Assistant Domotique Intelligent pour Animaux
+de Compagnie
+Version : 1.0
+Date : 23/09/2025
+1. Contexte et Objectifs du Projet
+1.1. Contexte
+Les propriétaires d’animaux domestiques sont souvent confrontés à des contraintes
+lorsqu’ils s’absentent : alimentation irrégulière, accès non sécurisé, manque de
+surveillance. La domotique permet de pallier ces difficultés grâce à des systèmes
+connectés, automatisés et intelligents.
+1.2. Objectifs
+Ce projet a pour but de concevoir un assistant domotique simplifié, composé des
+éléments suivants :
+Un distributeur automatique de nourriture intelligent.
+Une porte connectée avec détection de collier RFID ou Bluetooth.
+Une application mobile pour contrôler et surveiller le tout à distance.
+2. Description Générale de la Solution
+La solution se compose de trois modules intégrés :
+Distributeur automatique connecté : Permet la programmation des repas, la gestion
+des quantités, et l’envoi d’alertes en cas de niveau bas.
+Porte intelligente : Permet l’accès à l’animal équipé d’un collier reconnu (RFID ou
+BLE) tout en empêchant les intrusions.
+Application mobile : Interface unique de commande, configuration et suivi,
+compatible Android/iOS.
+3. Fonctionnalités Détaillées
+3.1. Distributeur de Nourriture
+Programmation des horaires de repas.
+Contrôle des portions en grammes.
+Détection automatique du niveau de croquettes.
+Mode manuel de distribution via l'application.
+Système anti-bourrage pour éviter les blocages.
+3.2. Porte Intelligente
+Détection du collier de l’animal (RFID ou BLE).
+Ouverture automatique si collier reconnu.
+Blocage automatique si animal non autorisé.
+Historique des passages (entrée/sortie horodatée).
+Contrôle manuel depuis l'application.
+Notifications en cas de passage ou d’intrusion.
+3.3. Application Mobile
+Interface simple et intuitive.
+Programmation des repas et de la porte.
+Historique complet des événements.
+Gestion de plusieurs animaux avec identification.
+Notifications en temps réel.
+Authentification sécurisée.
+4. Contraintes Techniques
+Matériel
+Microcontrôleur ESP32 (avec Wi-Fi et BLE).
+Capteur de niveau (ultrasonique ou infrarouge).
+Moteur de type servomoteur SG90 ou équivalent.
+Lecteur RFID MFRC522 ou module BLE HM-10.
+Alimentation : adaptateur secteur + batterie de secours.
+Collier RFID passif ou BLE actif.
+Logiciel
+Application mobile développée en Flutter ou React Native.
+Backend sur Firebase ou AWS.
+Communication sécurisée (HTTPS, MQTT).
+Mise à jour OTA (Over-The-Air) possible.
+5. Sécurité
+Chiffrement des données (AES/SSL).
+Authentification obligatoire pour l’accès à l’application.
+Protection contre les accès non autorisés à la porte.
+Notifications de sécurité (tentatives d'intrusion, erreurs système).
+Batterie de secours pour fonctionnement hors ligne.
+6. Livrables
+Prototype fonctionnel : distributeur, porte, app mobile.
+Documentation technique complète.
+Manuel utilisateur.
+Rapport final de projet.
+Vidéo de démonstration
