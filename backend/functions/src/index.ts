@@ -1,8 +1,6 @@
-import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
-import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
-import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { HttpsError } from 'firebase-functions/v2/https';
+import * as admin from "firebase-admin";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 
 // Initialisation Firebase Admin
 admin.initializeApp();
@@ -14,20 +12,20 @@ const messaging = admin.messaging();
 interface DeviceCommand {
   deviceId: string;
   command: {
-    type: 'feed' | 'open_door' | 'close_door' | 'get_status' | 'update_config';
+    type: "feed" | "open_door" | "close_door" | "get_status" | "update_config";
     payload?: any;
   };
   timestamp: admin.firestore.Timestamp;
-  status: 'pending' | 'sent' | 'acknowledged' | 'failed';
+  status: "pending" | "sent" | "acknowledged" | "failed";
   userId: string;
 }
 
 interface AccessLog {
   deviceId: string;
   petId?: string;
-  direction: 'entry' | 'exit';
-  method: 'rfid' | 'ble' | 'manual' | 'scheduled';
-  status: 'success' | 'denied' | 'error' | 'timeout';
+  direction: "entry" | "exit";
+  method: "rfid" | "ble" | "manual" | "scheduled";
+  status: "success" | "denied" | "error" | "timeout";
   timestamp: admin.firestore.Timestamp;
   rfidTag?: string;
   bleMacAddress?: string;
@@ -40,19 +38,19 @@ interface FeedingLog {
   amount: number;
   scheduledAmount?: number;
   timestamp: admin.firestore.Timestamp;
-  status: 'success' | 'failed' | 'partial';
+  status: "success" | "failed" | "partial";
   errorMessage?: string;
 }
 
 // Cloud Function: Traitement des commandes d'appareils
 export const processDeviceCommand = onDocumentCreated(
-  'device_commands/{commandId}',
+  "device_commands/{commandId}",
   async (event) => {
     const commandData = event.data?.data() as DeviceCommand;
     const commandId = event.params.commandId;
 
     if (!commandData) {
-      console.error('Aucune donnée de commande trouvée');
+      console.error("Aucune donnée de commande trouvée");
       return;
     }
 
@@ -61,26 +59,26 @@ export const processDeviceCommand = onDocumentCreated(
       console.log(`Envoi de la commande ${commandData.command.type} à l'appareil ${commandData.deviceId}`);
       
       // Mettre à jour le statut de la commande
-      await db.collection('device_commands').doc(commandId).update({
-        status: 'sent',
+      await db.collection("device_commands").doc(commandId).update({
+        status: "sent",
         sentAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
       // Envoyer une notification à l'utilisateur
       await sendNotificationToUser(
         commandData.userId,
-        'Commande envoyée',
+        "Commande envoyée",
         `La commande ${commandData.command.type} a été envoyée à votre appareil.`,
         { commandId, deviceId: commandData.deviceId }
       );
 
     } catch (error) {
-      console.error('Erreur lors du traitement de la commande:', error);
+      console.error("Erreur lors du traitement de la commande:", error);
       
       // Marquer la commande comme échouée
-      await db.collection('device_commands').doc(commandId).update({
-        status: 'failed',
-        error: error instanceof Error ? error.message : 'Erreur inconnue',
+      await db.collection("device_commands").doc(commandId).update({
+        status: "failed",
+        error: error instanceof Error ? error.message : "Erreur inconnue",
         failedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     }
@@ -89,7 +87,7 @@ export const processDeviceCommand = onDocumentCreated(
 
 // Cloud Function: Traitement des logs d'accès
 export const processAccessLog = onDocumentCreated(
-  'access_logs/{logId}',
+  "access_logs/{logId}",
   async (event) => {
     const logData = event.data?.data() as AccessLog;
 
@@ -97,8 +95,8 @@ export const processAccessLog = onDocumentCreated(
 
     try {
       // Trouver le propriétaire de l'appareil
-      const deviceQuery = await db.collectionGroup('devices')
-        .where('id', '==', logData.deviceId)
+      const deviceQuery = await db.collectionGroup("devices")
+        .where("id", "==", logData.deviceId)
         .limit(1)
         .get();
 
@@ -111,37 +109,37 @@ export const processAccessLog = onDocumentCreated(
       const userId = deviceDoc.ref.parent.parent?.id;
 
       if (!userId) {
-        console.error('Impossible de déterminer le propriétaire de l\'appareil');
+        console.error("Impossible de déterminer le propriétaire de l'appareil");
         return;
       }
 
       // Envoyer une notification selon le statut
-      let title = '';
-      let body = '';
-      let priority: 'normal' | 'high' = 'normal';
+      let title = "";
+      let body = "";
+      let priority: "normal" | "high" = "normal";
 
       switch (logData.status) {
-        case 'success':
-          title = `Accès ${logData.direction === 'entry' ? 'autorisé' : 'sortie'}`;
-          body = logData.petId 
-            ? `Votre animal a ${logData.direction === 'entry' ? 'entré' : 'quitté'} la maison`
-            : `Accès ${logData.direction === 'entry' ? 'entrant' : 'sortant'} détecté`;
-          break;
-        case 'denied':
-          title = 'Accès refusé';
-          body = 'Tentative d\'accès non autorisée détectée';
-          priority = 'high';
-          break;
-        case 'error':
-        case 'timeout':
-          title = 'Erreur d\'accès';
-          body = logData.errorMessage || 'Erreur lors de la tentative d\'accès';
-          priority = 'high';
-          break;
+      case "success":
+        title = `Accès ${logData.direction === "entry" ? "autorisé" : "sortie"}`;
+        body = logData.petId 
+          ? `Votre animal a ${logData.direction === "entry" ? "entré" : "quitté"} la maison`
+          : `Accès ${logData.direction === "entry" ? "entrant" : "sortant"} détecté`;
+        break;
+      case "denied":
+        title = "Accès refusé";
+        body = "Tentative d'accès non autorisée détectée";
+        priority = "high";
+        break;
+      case "error":
+      case "timeout":
+        title = "Erreur d'accès";
+        body = logData.errorMessage || "Erreur lors de la tentative d'accès";
+        priority = "high";
+        break;
       }
 
       await sendNotificationToUser(userId, title, body, {
-        type: 'access_log',
+        type: "access_log",
         logId: event.params.logId,
         deviceId: logData.deviceId,
         status: logData.status,
@@ -151,14 +149,14 @@ export const processAccessLog = onDocumentCreated(
       await updateAccessStatistics(userId, logData.deviceId, logData);
 
     } catch (error) {
-      console.error('Erreur lors du traitement du log d\'accès:', error);
+      console.error("Erreur lors du traitement du log d'accès:", error);
     }
   }
 );
 
 // Cloud Function: Traitement des logs de distribution
 export const processFeedingLog = onDocumentCreated(
-  'feeding_logs/{logId}',
+  "feeding_logs/{logId}",
   async (event) => {
     const logData = event.data?.data() as FeedingLog;
 
@@ -166,8 +164,8 @@ export const processFeedingLog = onDocumentCreated(
 
     try {
       // Trouver le propriétaire de l'appareil
-      const deviceQuery = await db.collectionGroup('devices')
-        .where('id', '==', logData.deviceId)
+      const deviceQuery = await db.collectionGroup("devices")
+        .where("id", "==", logData.deviceId)
         .limit(1)
         .get();
 
@@ -179,26 +177,26 @@ export const processFeedingLog = onDocumentCreated(
       if (!userId) return;
 
       // Envoyer une notification
-      let title = '';
-      let body = '';
+      let title = "";
+      let body = "";
 
       switch (logData.status) {
-        case 'success':
-          title = 'Distribution réussie';
-          body = `${logData.amount}g de nourriture distribués`;
-          break;
-        case 'failed':
-          title = 'Échec de distribution';
-          body = logData.errorMessage || 'Erreur lors de la distribution';
-          break;
-        case 'partial':
-          title = 'Distribution partielle';
-          body = `Seulement ${logData.amount}g distribués sur ${logData.scheduledAmount}g prévus`;
-          break;
+      case "success":
+        title = "Distribution réussie";
+        body = `${logData.amount}g de nourriture distribués`;
+        break;
+      case "failed":
+        title = "Échec de distribution";
+        body = logData.errorMessage || "Erreur lors de la distribution";
+        break;
+      case "partial":
+        title = "Distribution partielle";
+        body = `Seulement ${logData.amount}g distribués sur ${logData.scheduledAmount}g prévus`;
+        break;
       }
 
       await sendNotificationToUser(userId, title, body, {
-        type: 'feeding_log',
+        type: "feeding_log",
         logId: event.params.logId,
         deviceId: logData.deviceId,
         status: logData.status,
@@ -208,22 +206,22 @@ export const processFeedingLog = onDocumentCreated(
       await updateFeedingStatistics(userId, logData.deviceId, logData);
 
     } catch (error) {
-      console.error('Erreur lors du traitement du log de distribution:', error);
+      console.error("Erreur lors du traitement du log de distribution:", error);
     }
   }
 );
 
 // Cloud Function: Surveillance des appareils hors ligne
-export const checkOfflineDevices = onSchedule('every 5 minutes', async () => {
+export const checkOfflineDevices = onSchedule("every 5 minutes", async () => {
   try {
     const fiveMinutesAgo = admin.firestore.Timestamp.fromDate(
       new Date(Date.now() - 5 * 60 * 1000)
     );
 
     // Trouver tous les appareils qui n'ont pas donné signe de vie depuis 5 minutes
-    const offlineDevicesQuery = await db.collectionGroup('devices')
-      .where('lastSeen', '<', fiveMinutesAgo)
-      .where('status', '!=', 'offline')
+    const offlineDevicesQuery = await db.collectionGroup("devices")
+      .where("lastSeen", "<", fiveMinutesAgo)
+      .where("status", "!=", "offline")
       .get();
 
     const batch = db.batch();
@@ -237,7 +235,7 @@ export const checkOfflineDevices = onSchedule('every 5 minutes', async () => {
 
       // Marquer l'appareil comme hors ligne
       batch.update(deviceDoc.ref, {
-        status: 'offline',
+        status: "offline",
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
@@ -245,13 +243,13 @@ export const checkOfflineDevices = onSchedule('every 5 minutes', async () => {
       notifications.push(
         sendNotificationToUser(
           userId,
-          'Appareil hors ligne',
+          "Appareil hors ligne",
           `${deviceData.name} ne répond plus depuis plus de 5 minutes`,
           {
-            type: 'device_offline',
+            type: "device_offline",
             deviceId: deviceData.id,
           },
-          'high'
+          "high"
         )
       );
     }
@@ -265,20 +263,20 @@ export const checkOfflineDevices = onSchedule('every 5 minutes', async () => {
     console.log(`${offlineDevicesQuery.size} appareils marqués comme hors ligne`);
 
   } catch (error) {
-    console.error('Erreur lors de la vérification des appareils hors ligne:', error);
+    console.error("Erreur lors de la vérification des appareils hors ligne:", error);
   }
 });
 
 // Cloud Function: Nettoyage des anciens logs
-export const cleanupOldLogs = onSchedule('every 24 hours', async () => {
+export const cleanupOldLogs = onSchedule("every 24 hours", async () => {
   try {
     const thirtyDaysAgo = admin.firestore.Timestamp.fromDate(
       new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     );
 
     // Nettoyer les logs d'accès anciens
-    const oldAccessLogs = await db.collection('access_logs')
-      .where('timestamp', '<', thirtyDaysAgo)
+    const oldAccessLogs = await db.collection("access_logs")
+      .where("timestamp", "<", thirtyDaysAgo)
       .limit(500)
       .get();
 
@@ -292,8 +290,8 @@ export const cleanupOldLogs = onSchedule('every 24 hours', async () => {
     }
 
     // Nettoyer les logs de distribution anciens
-    const oldFeedingLogs = await db.collection('feeding_logs')
-      .where('timestamp', '<', thirtyDaysAgo)
+    const oldFeedingLogs = await db.collection("feeding_logs")
+      .where("timestamp", "<", thirtyDaysAgo)
       .limit(500)
       .get();
 
@@ -309,7 +307,7 @@ export const cleanupOldLogs = onSchedule('every 24 hours', async () => {
     console.log(`Nettoyage terminé: ${oldAccessLogs.size} logs d'accès et ${oldFeedingLogs.size} logs de distribution supprimés`);
 
   } catch (error) {
-    console.error('Erreur lors du nettoyage des logs:', error);
+    console.error("Erreur lors du nettoyage des logs:", error);
   }
 });
 
@@ -319,11 +317,11 @@ async function sendNotificationToUser(
   title: string,
   body: string,
   data: Record<string, any> = {},
-  priority: 'normal' | 'high' = 'normal'
+  priority: "normal" | "high" = "normal"
 ): Promise<void> {
   try {
     // Récupérer le token FCM de l'utilisateur
-    const userDoc = await db.collection('users').doc(userId).get();
+    const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
 
     if (!userData?.fcmToken) {
@@ -343,10 +341,10 @@ async function sendNotificationToUser(
         timestamp: Date.now().toString(),
       },
       android: {
-        priority: priority as 'normal' | 'high',
+        priority: priority as "normal" | "high",
         notification: {
-          channelId: 'pet_smart_home_notifications',
-          priority: priority as 'default_' | 'high',
+          channelId: "pet_smart_home_notifications",
+          priority: (priority === "high" ? "high" : "default") as "high" | "default",
         },
       },
       apns: {
@@ -357,7 +355,7 @@ async function sendNotificationToUser(
               body,
             },
             badge: 1,
-            sound: 'default',
+            sound: "default",
           },
         },
       },
@@ -366,7 +364,7 @@ async function sendNotificationToUser(
     await messaging.send(message);
 
     // Sauvegarder la notification dans Firestore
-    await db.collection('notifications').add({
+    await db.collection("notifications").add({
       userId,
       title,
       body,
@@ -376,7 +374,7 @@ async function sendNotificationToUser(
     });
 
   } catch (error) {
-    console.error('Erreur lors de l\'envoi de la notification:', error);
+    console.error("Erreur lors de l'envoi de la notification:", error);
   }
 }
 
@@ -391,7 +389,7 @@ async function updateAccessStatistics(
     today.setHours(0, 0, 0, 0);
     const statsId = `${deviceId}_${today.getTime()}`;
 
-    const statsRef = db.collection('statistics').doc(statsId);
+    const statsRef = db.collection("statistics").doc(statsId);
     
     await db.runTransaction(async (transaction) => {
       const statsDoc = await transaction.get(statsRef);
@@ -410,11 +408,11 @@ async function updateAccessStatistics(
           deviceId,
           date: admin.firestore.Timestamp.fromDate(today),
           totalAccesses: 1,
-          successCount: logData.status === 'success' ? 1 : 0,
-          deniedCount: logData.status === 'denied' ? 1 : 0,
-          errorCount: ['error', 'timeout'].includes(logData.status) ? 1 : 0,
-          entryCount: logData.direction === 'entry' ? 1 : 0,
-          exitCount: logData.direction === 'exit' ? 1 : 0,
+          successCount: logData.status === "success" ? 1 : 0,
+          deniedCount: logData.status === "denied" ? 1 : 0,
+          errorCount: ["error", "timeout"].includes(logData.status) ? 1 : 0,
+          entryCount: logData.direction === "entry" ? 1 : 0,
+          exitCount: logData.direction === "exit" ? 1 : 0,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -422,7 +420,7 @@ async function updateAccessStatistics(
     });
 
   } catch (error) {
-    console.error('Erreur lors de la mise à jour des statistiques d\'accès:', error);
+    console.error("Erreur lors de la mise à jour des statistiques d'accès:", error);
   }
 }
 
@@ -437,7 +435,7 @@ async function updateFeedingStatistics(
     today.setHours(0, 0, 0, 0);
     const statsId = `${deviceId}_feeding_${today.getTime()}`;
 
-    const statsRef = db.collection('statistics').doc(statsId);
+    const statsRef = db.collection("statistics").doc(statsId);
     
     await db.runTransaction(async (transaction) => {
       const statsDoc = await transaction.get(statsRef);
@@ -457,9 +455,9 @@ async function updateFeedingStatistics(
           date: admin.firestore.Timestamp.fromDate(today),
           totalFeedings: 1,
           totalAmount: logData.amount,
-          successCount: logData.status === 'success' ? 1 : 0,
-          failedCount: logData.status === 'failed' ? 1 : 0,
-          partialCount: logData.status === 'partial' ? 1 : 0,
+          successCount: logData.status === "success" ? 1 : 0,
+          failedCount: logData.status === "failed" ? 1 : 0,
+          partialCount: logData.status === "partial" ? 1 : 0,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -467,6 +465,6 @@ async function updateFeedingStatistics(
     });
 
   } catch (error) {
-    console.error('Erreur lors de la mise à jour des statistiques de distribution:', error);
+    console.error("Erreur lors de la mise à jour des statistiques de distribution:", error);
   }
 }
