@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide TimeOfDay;
+import 'package:flutter/material.dart' as material show TimeOfDay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/firebase_service.dart';
@@ -782,7 +783,7 @@ class _AddFeedingTimeDialogState extends State<AddFeedingTimeDialog> {
           ListTile(
             leading: const Icon(Icons.access_time),
             title: const Text('Heure'),
-            subtitle: Text(_selectedTime.format(context)),
+            subtitle: Text('${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}'),
             onTap: _selectTime,
           ),
           
@@ -845,15 +846,18 @@ class _AddFeedingTimeDialogState extends State<AddFeedingTimeDialog> {
   }
 
   Future<void> _selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(
+    final material.TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: _selectedTime,
+      initialTime: material.TimeOfDay(hour: _selectedTime.hour, minute: _selectedTime.minute),
     );
     
-    if (picked != null && picked != _selectedTime) {
-      setState(() {
-        _selectedTime = picked;
-      });
+    if (picked != null) {
+      final newTime = TimeOfDay(hour: picked.hour, minute: picked.minute);
+      if (newTime.hour != _selectedTime.hour || newTime.minute != _selectedTime.minute) {
+        setState(() {
+          _selectedTime = newTime;
+        });
+      }
     }
   }
 
