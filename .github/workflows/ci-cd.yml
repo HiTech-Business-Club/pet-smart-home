@@ -1,0 +1,192 @@
+name: Pet Smart Home CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  FLUTTER_VERSION: '3.16.0'
+  NODE_VERSION: '18'
+
+jobs:
+  # Tests du firmware ESP32
+  test-esp32:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install PlatformIO
+      run: |
+        pip install platformio
+        pio --version
+    
+    - name: Build ESP32 Firmware
+      run: |
+        cd esp32-firmware
+        pio run
+    
+    - name: Upload firmware artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: esp32-firmware
+        path: esp32-firmware/.pio/build/*/firmware.bin
+
+  # Tests de l'application Flutter
+  test-flutter:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+    
+    - name: Get Flutter dependencies
+      run: |
+        cd mobile-app
+        flutter pub get
+    
+    - name: Run Flutter tests
+      run: |
+        cd mobile-app
+        flutter test
+    
+    - name: Build APK
+      run: |
+        cd mobile-app
+        flutter build apk --release
+    
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: android-apk
+        path: mobile-app/build/app/outputs/flutter-apk/app-release.apk
+
+  # Tests des Cloud Functions
+  test-functions:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        cd backend/functions
+        npm install
+    
+    - name: Run linting
+      run: |
+        cd backend/functions
+        npm run lint
+    
+    - name: Build functions
+      run: |
+        cd backend/functions
+        npm run build
+
+  # Déploiement en staging
+  deploy-staging:
+    needs: [test-esp32, test-flutter, test-functions]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install Firebase CLI
+      run: npm install -g firebase-tools
+    
+    - name: Deploy to Firebase Staging
+      run: |
+        cd backend
+        firebase use staging --token ${{ secrets.FIREBASE_TOKEN }}
+        firebase deploy --token ${{ secrets.FIREBASE_TOKEN }}
+
+  # Déploiement en production
+  deploy-production:
+    needs: [test-esp32, test-flutter, test-functions]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install Firebase CLI
+      run: npm install -g firebase-tools
+    
+    - name: Deploy to Firebase Production
+      run: |
+        cd backend
+        firebase use production --token ${{ secrets.FIREBASE_TOKEN }}
+        firebase deploy --token ${{ secrets.FIREBASE_TOKEN }}
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Pet Smart Home v${{ github.run_number }}
+        body: |
+          Déploiement automatique en production
+          
+          ## Changements
+          - Firmware ESP32 optimisé
+          - Application mobile mise à jour
+          - Cloud Functions déployées
+          
+          ## Artefacts
+          - Firmware ESP32: Disponible dans les assets
+          - APK Android: Disponible dans les assets
+        draft: false
+        prerelease: false
+
+  # Build iOS (optionnel, nécessite un runner macOS)
+  build-ios:
+    runs-on: macos-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+    
+    - name: Get Flutter dependencies
+      run: |
+        cd mobile-app
+        flutter pub get
+    
+    - name: Build iOS
+      run: |
+        cd mobile-app
+        flutter build ios --release --no-codesign
+    
+    - name: Upload iOS build
+      uses: actions/upload-artifact@v3
+      with:
+        name: ios-build
+        path: mobile-app/build/ios/iphoneos/Runner.app

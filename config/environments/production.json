@@ -1,0 +1,39 @@
+{
+  "environment": "production",
+  "firebase": {
+    "projectId": "pet-smart-home-prod",
+    "apiKey": "YOUR_PRODUCTION_API_KEY",
+    "authDomain": "pet-smart-home-prod.firebaseapp.com",
+    "databaseURL": "https://pet-smart-home-prod-default-rtdb.firebaseio.com",
+    "storageBucket": "pet-smart-home-prod.appspot.com",
+    "messagingSenderId": "YOUR_SENDER_ID",
+    "appId": "YOUR_APP_ID"
+  },
+  "mqtt": {
+    "broker": "mqtt.pet-smart-home.com",
+    "port": 8883,
+    "secure": true,
+    "clientIdPrefix": "pet-smart-prod"
+  },
+  "api": {
+    "baseUrl": "https://api.pet-smart-home.com",
+    "timeout": 30000,
+    "retryAttempts": 3
+  },
+  "features": {
+    "analytics": true,
+    "crashReporting": true,
+    "debugging": false,
+    "betaFeatures": false
+  },
+  "security": {
+    "encryptionEnabled": true,
+    "certificatePinning": true,
+    "biometricAuth": true
+  },
+  "ota": {
+    "serverUrl": "https://ota.pet-smart-home.com",
+    "checkInterval": 86400,
+    "autoUpdate": false
+  }
+}
