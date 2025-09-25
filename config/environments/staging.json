@@ -1,0 +1,39 @@
+{
+  "environment": "staging",
+  "firebase": {
+    "projectId": "pet-smart-home-staging",
+    "apiKey": "YOUR_STAGING_API_KEY",
+    "authDomain": "pet-smart-home-staging.firebaseapp.com",
+    "databaseURL": "https://pet-smart-home-staging-default-rtdb.firebaseio.com",
+    "storageBucket": "pet-smart-home-staging.appspot.com",
+    "messagingSenderId": "YOUR_SENDER_ID",
+    "appId": "YOUR_APP_ID"
+  },
+  "mqtt": {
+    "broker": "mqtt-staging.pet-smart-home.com",
+    "port": 8883,
+    "secure": true,
+    "clientIdPrefix": "pet-smart-staging"
+  },
+  "api": {
+    "baseUrl": "https://api-staging.pet-smart-home.com",
+    "timeout": 30000,
+    "retryAttempts": 3
+  },
+  "features": {
+    "analytics": true,
+    "crashReporting": true,
+    "debugging": true,
+    "betaFeatures": true
+  },
+  "security": {
+    "encryptionEnabled": true,
+    "certificatePinning": false,
+    "biometricAuth": true
+  },
+  "ota": {
+    "serverUrl": "https://ota-staging.pet-smart-home.com",
+    "checkInterval": 3600,
+    "autoUpdate": true
+  }
+}
