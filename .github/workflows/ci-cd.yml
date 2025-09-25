@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  FLUTTER_VERSION: '3.16.0'
+  FLUTTER_VERSION: '3.24.3'
   NODE_VERSION: '18'
 
 jobs:
@@ -24,16 +24,17 @@ jobs:
     
     - name: Install PlatformIO
       run: |
-        pip install platformio
+        pip install --upgrade platformio
         pio --version
+        pio system info
     
     - name: Build ESP32 Firmware
       run: |
         cd esp32-firmware
-        pio run
+        pio run -v
     
     - name: Upload firmware artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: esp32-firmware
         path: esp32-firmware/.pio/build/*/firmware.bin
@@ -48,16 +49,19 @@ jobs:
       uses: subosito/flutter-action@v2
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
+        cache: true
     
     - name: Get Flutter dependencies
       run: |
         cd mobile-app
+        flutter doctor -v
         flutter pub get
+        flutter pub deps
     
     - name: Run Flutter tests
       run: |
         cd mobile-app
-        flutter test
+        flutter test --reporter=expanded
     
     - name: Build APK
       run: |
@@ -65,7 +69,7 @@ jobs:
         flutter build apk --release
     
     - name: Upload APK artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: android-apk
         path: mobile-app/build/app/outputs/flutter-apk/app-release.apk
@@ -166,7 +170,7 @@ jobs:
   # Build iOS (optionnel, nécessite un runner macOS)
   build-ios:
     runs-on: macos-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/fix/') || startsWith(github.ref, 'refs/heads/feature/')
     steps:
     - uses: actions/checkout@v4
     
@@ -174,11 +178,14 @@ jobs:
       uses: subosito/flutter-action@v2
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
+        cache: true
     
     - name: Get Flutter dependencies
       run: |
         cd mobile-app
+        flutter doctor -v
         flutter pub get
+        flutter pub deps
     
     - name: Build iOS
       run: |
@@ -186,7 +193,7 @@ jobs:
         flutter build ios --release --no-codesign
     
     - name: Upload iOS build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ios-build
         path: mobile-app/build/ios/iphoneos/Runner.app
